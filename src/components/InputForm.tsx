@@ -1,17 +1,23 @@
 import React, { useState } from 'react';
 import '../App.css';
 
-const InputForm = ({ setTodos }: any) => {
+type setTodo = (todos: string) => string;
+
+type InputFormProps = {
+    setTodos: React.Dispatch<React.SetStateAction<{ id: number; title: string; }[]>>;
+};
+
+const InputForm: React.FC<InputFormProps> = ({ setTodos }) => {
     // const [todoId, setTodoId] = useState(todos.length + 1)
     const [todoTitle, setTodoTitle] = useState('')
 
-    const handleAddFormChanges = (e: any) => { setTodoTitle(e.target.value) }
+    const handleAddFormChanges = (e: React.ChangeEvent<HTMLInputElement>) => { setTodoTitle(e.target.value) }
 
     const handleAddTodo = () => {
         // todoTitle が入力なしの場合実行しない
         if (todoTitle === '') return
         // setTodos([...todos, {id: todoId, title: todoTitle}])
-        setTodos((prev: string | any[]) => {
+        setTodos((prev) => {
             const newTodos = [...prev, { id: prev.length + 1, title: todoTitle }]
             return newTodos
         })
@@ -26,7 +32,6 @@ const InputForm = ({ setTodos }: any) => {
                 // label="タイトル"
                 value={todoTitle}
                 onChange={handleAddFormChanges}
-                className='input'
                 placeholder="ここにTODOを入力し作成ボタンを押す"
                 style={{
                     position: 'absolute',
@@ -45,7 +50,7 @@ const InputForm = ({ setTodos }: any) => {
                 onClick={handleAddTodo}
                 style={{
                     position: 'absolute',
-                    top: '10px',
+                    top: '11px',
                     left: '520px',
                 }}
             >作成
