@@ -1,29 +1,59 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { db, addTodoToFirestore } from './FireBase';
+import { collection, getDocs } from 'firebase/firestore';
 import '../App.css';
 
-type setTodo = (todos: string) => string;
+type Todo = {
+    id: number;
+    title: string;
+};
 
 type InputFormProps = {
     setTodos: React.Dispatch<React.SetStateAction<{ id: number; title: string; }[]>>;
 };
 
-const InputForm: React.FC<InputFormProps> = ({ setTodos }) => {
-    // const [todoId, setTodoId] = useState(todos.length + 1)
+const InputForm: React.FC<InputFormProps> = ({ setTodos: setParentTodos }) => {
+
     const [todoTitle, setTodoTitle] = useState('')
+    const [todos, setTodos] = useState<Todo[]>([]);
 
     const handleAddFormChanges = (e: React.ChangeEvent<HTMLInputElement>) => { setTodoTitle(e.target.value) }
 
-    const handleAddTodo = () => {
-        // todoTitle が入力なしの場合実行しない
-        if (todoTitle === '') return
-        // setTodos([...todos, {id: todoId, title: todoTitle}])
-        setTodos((prev) => {
-            const newTodos = [...prev, { id: prev.length + 1, title: todoTitle }]
-            return newTodos
-        })
-        // setTodoId(todoId + 1)
-        setTodoTitle('')
+    const handleAddTodo = async () => {
+        if (todoTitle === '') return;
+
+        // Firestoreにデータを追加
+        await addTodoToFirestore(todoTitle);
+
+        // todoTitleをクリア
+        setTodoTitle('');
+
+        setTodos(prevTodos => [
+            ...prevTodos,
+            { id: prevTodos.length + 1, title: todoTitle }
+        ]);
     }
+
+    useEffect(() => {
+        // Firestoreからデータを取得してtodosステートを更新
+        const fetchData = async () => {
+            try {
+                const todoCollection = collection(db, 'todo');
+                const querySnapshot = await getDocs(todoCollection);
+                const todosData: Todo[] = [];
+                querySnapshot.forEach(doc => {
+                    const todoData = doc.data();
+                    todosData.push({ id: parseInt(doc.id), title: todoData.title });
+                });
+                setTodos(todosData);
+            } catch (error) {
+                console.error('Error fetching todos:', error);
+            }
+        };
+
+        fetchData();
+    }, []);
+
     return (
         // CSS IN JS によりスタイリングの影響をコンポーネント内で完結できるものは完結する。
         <div style={{ position: 'relative' }}>
@@ -55,6 +85,12 @@ const InputForm: React.FC<InputFormProps> = ({ setTodos }) => {
                 }}
             >作成
             </button>
+            <div style={{ position: 'absolute', top: '50px', left: '100px' }}>
+                {/* todosをマップして表示 */}
+                {todos.map(todo => (
+                    <div key={todo.id}>{todo.title}</div>
+                ))}
+            </div>
         </div>
     )
 }
